@@ -25,7 +25,7 @@ function createResponse(ok,message,data){
 
 router.post('/register',async(req,res,next)=>{
     try{
-        const{name,email,password}=req.body;
+        const{name,email,password,city}=req.body;
         const exsistingUser=await User.findOne({email:email});
 
         if(exsistingUser){
@@ -36,6 +36,7 @@ router.post('/register',async(req,res,next)=>{
             name,
             password,
             email,
+            city,
         });
 
         await newUser.save();
@@ -65,8 +66,8 @@ router.post('/login',async(req,res,next)=>{
         return res.status(400).json(createResponse(false, 'Invalid credentials'));
     }
 
-    const authToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: '10m' });
-    const refreshToken = jwt.sign({ userId: user._id }, process.env.JWT_REFRESH_SECRET_KEY, { expiresIn: '30m' });
+    const authToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, { expiresIn: '50m' });
+    const refreshToken = jwt.sign({ userId: user._id }, process.env.JWT_REFRESH_SECRET_KEY, { expiresIn: '50m' });
     res.cookie('authToken', authToken,  { httpOnly: true, secure: true, sameSite: 'None' });
     res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, sameSite: 'None' });
 
@@ -84,6 +85,41 @@ router.get('/checklogin',authTokenHandler,async(req,res)=>{
         ok:true,
         message:'user authenticated succesfully'
     })
+})
+
+
+router.get('/logout', authTokenHandler, async (req, res) => {
+    res.clearCookie('authToken');
+    res.clearCookie('refreshToken');
+    res.json({
+        ok: true,
+        message: 'User logged out successfully'
+    })
+})
+
+router.get('/getuser', authTokenHandler, async (req, res) => {
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json(createResponse(false, 'Invalid credentials'));
+    }
+    else{
+        return res.status(200).json(createResponse(true, 'User found', user));
+    }
+})
+
+router.post('/changeCity', authTokenHandler, async (req, res, next) => {
+    const { city } = req.body;
+    const user = await User.findOne({ _id: req.userId });
+
+    if (!user) {
+        return res.status(400).json(createResponse(false, 'Invalid credentials'));
+    }
+    else{
+        user.city = city;
+        await user.save();
+        return res.status(200).json(createResponse(true, 'City changed successfully'));
+    }
 })
 
 router.use(errorHandler);

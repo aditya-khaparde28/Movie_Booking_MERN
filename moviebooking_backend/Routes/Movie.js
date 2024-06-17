@@ -352,6 +352,46 @@ router.get('/schedulebymovie/:screenid/:date/:movieid', async (req, res, next) =
 
 });
 
+router.get('/getuserbookings' , authTokenHandler , async (req , res , next) => {
+    try {
+        const user = await User.findById(req.userId).populate('bookings');
+        if(!user){
+            return res.status(404).json(createResponse(false, 'User not found', null));
+        }
+
+        let bookings = [];
+        // user.bookings.forEach(async booking => {
+        //     let bookingobj = await Booking.findById(booking._id);
+        //     bookings.push(bookingobj);
+        // })
+
+        for(let i = 0 ; i < user.bookings.length ; i++){
+            let bookingobj = await Booking.findById(user.bookings[i]._id);
+            bookings.push(bookingobj);
+        }
+
+        res.status(200).json(createResponse(true, 'User bookings retrieved successfully', bookings));
+        // res.status(200).json(createResponse(true, 'User bookings retrieved successfully', user.bookings));
+    } catch (err) {
+        next(err); // Pass any errors to the error handling middleware
+    }
+})
+
+router.get('/getuserbookings/:id' , authTokenHandler , async (req , res , next) => {
+    try {
+        const bookingId = req.params.id;
+        const booking = await Booking.findById(bookingId);
+
+        if(!booking){
+            return res.status(404).json(createResponse(false, 'Booking not found', null));
+        }
+
+        res.status(200).json(createResponse(true, 'Booking retrieved successfully', booking));
+    } catch (err) {
+        next(err); // Pass any errors to the error handling middleware
+    }
+})
+
 router.use(errorHandler);
 
 module.exports=router;

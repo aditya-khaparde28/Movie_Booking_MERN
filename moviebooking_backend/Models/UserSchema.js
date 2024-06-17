@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
     },
     city:{
         type: String,
-        //required: true,
+        required: true,
     } 
 },{
     timestamps: true
